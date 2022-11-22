@@ -68,13 +68,12 @@ namespace SCCDownloader
             return movieList;
         }
 
-        public async Task<String> GetStreams(string id)
+        public async Task<VideoStream[]> GetStreams(string id)
         {
             var pathStream = String.Format(StreamUrl, id);
             var response = await httpClient.GetAsync(pathStream);
-            VideoStream[] result = await response.Content.ReadFromJsonAsync<VideoStream[]>();
-
-            return result.First().Ident;
+            //var sda = response.Content.ReadAsStringAsync();
+            return await response.Content.ReadFromJsonAsync<VideoStream[]>();
         }
     }
 }

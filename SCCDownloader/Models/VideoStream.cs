@@ -20,8 +20,10 @@ namespace SCCDownloader.Models
         
         [JsonPropertyName("video")]
         public StreamVideoInfo[] Video { get; set; }
+
         [JsonPropertyName("audio")]
         public StreamAudioInfo[] Audio { get; set; }
+
         [JsonPropertyName("subtitles")]
         public StreamSubtitleInfo[] Subtitles { get; set; }
     }

@@ -4,10 +4,13 @@ namespace SCCDownloader.Models
 {
     public class StreamSubtitleInfo
     {
+        [JsonPropertyName("_id")]
+        public string Id { get; set; }
+
         [JsonPropertyName("language")]
-        public String Language;
+        public String Language { get; set; }
 
         [JsonPropertyName("forced")]
-        public Boolean Forced;
+        public Boolean Forced { get; set; }
     }
 }
