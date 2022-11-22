@@ -1,4 +1,6 @@
 ﻿using System.Net;
+using System.Security.Cryptography;
+using XAct.Resources;
 
 namespace SCCDownloader
 {
@@ -24,45 +26,17 @@ namespace SCCDownloader
                 using (var request = new HttpRequestMessage(HttpMethod.Get, requestUri))
                 {
                     var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-                    using (Stream contentStream = await (response).Content.ReadAsStreamAsync(), stream = new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true))
+                    using (Stream contentStream = await (response).Content.ReadAsStreamAsync(), stream = new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.None, 2048, false))
                     {
-                        await CopyToAsync(contentStream, (long)response.Content.Headers.ContentLength, stream, 4096, progress, CancellationToken.None);
+                        using (ProgressReportingStream progressStream = new ProgressReportingStream(contentStream, progress, (long)response.Content.Headers.ContentLength))
+                        {
+                            progressStream.CopyTo(stream);
+                        }
+                        //await CopyToAsync(contentStream, (long)response.Content.Headers.ContentLength, stream, 2048, progress, CancellationToken.None);
                         //await contentStream.CopyToAsync(stream);
                     }
                 }
             }
-        }
-
-        public static async Task CopyToAsync(
-    this Stream source,
-    long sourceLength,
-    Stream destination,
-    int bufferSize,
-    IProgress<KeyValuePair<long, long>> progress,
-    CancellationToken cancellationToken)
-        {
-            if (0 == bufferSize)
-                bufferSize = 4096;
-            var buffer = new byte[bufferSize];
-            if (0 > sourceLength && source.CanSeek)
-                sourceLength = source.Length - source.Position;
-            var totalBytesCopied = 0L;
-            if (null != progress)
-                progress.Report(new KeyValuePair<long, long>(totalBytesCopied, sourceLength));
-            var bytesRead = -1;
-            while (0 != bytesRead && !cancellationToken.IsCancellationRequested)
-            {
-                bytesRead = await source.ReadAsync(buffer, 0, buffer.Length);
-                if (0 == bytesRead || cancellationToken.IsCancellationRequested)
-                    break;
-                await destination.WriteAsync(buffer, 0, buffer.Length);
-                totalBytesCopied += bytesRead;
-                if (null != progress)
-                    progress.Report(new KeyValuePair<long, long>(totalBytesCopied, sourceLength));
-            }
-            if (0 < totalBytesCopied)
-                progress.Report(new KeyValuePair<long, long>(totalBytesCopied, sourceLength));
-            cancellationToken.ThrowIfCancellationRequested();
         }
     }
 }

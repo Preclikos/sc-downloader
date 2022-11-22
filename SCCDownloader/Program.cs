@@ -1,7 +1,5 @@
 ﻿using SCCDownloader;
 using SCCDownloader.Models;
-using System.IO;
-using System.Linq;
 using System.Net;
 using XAct;
 
@@ -46,28 +44,36 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
                         foreach (var movie in movies)
                         {
                             var streams = await sc.GetStreams(movie.Id);
-
-                            var streamIdent = GetIdentForParameters(streams);
-                            if (streamIdent != null && !String.IsNullOrEmpty(movie.Name))
+                            if (streams.Length > 0)
                             {
-                                Console.WriteLine(GetInfoStringFromStream(movie.Name, streamIdent));
-                                var fileName = GetFileName(movie, streamIdent);
-
-                                if (!File.Exists(fileName))
+                                var streamIdent = GetIdentForParameters(streams);
+                                if (streamIdent != null && !String.IsNullOrEmpty(movie.Name))
                                 {
-                                    var link = await ws.GetLink(wsToken, streamIdent.Ident);
+                                    Console.WriteLine(GetInfoStringFromStream(movie.Name, streamIdent));
+                                    var fileName = GetFileName(movie, streamIdent);
 
-                                    var progress = new ProgressBar();
-                                    await WebUtils.DownloadAsync(link, fileName, progress);
+                                    if (!File.Exists(fileName))
+                                    {
+                                        var link = await ws.GetLink(wsToken, streamIdent.Ident);
+
+                                        var progress = new ProgressBar();
+                                        await WebUtils.DownloadAsync(link, fileName, progress);
+
+                                        Console.WriteLine("Completed: " + fileName);
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("File exist skipping: " + fileName);
+                                    }
                                 }
                                 else
                                 {
-                                    Console.WriteLine("File exist skipping: " + fileName);
+                                    Console.WriteLine("No audio or subtitles exist skip: " + movie.Name);
                                 }
                             }
                             else
                             {
-                                Console.WriteLine("No audio or subtitles exist skip: " + movie.Name);
+                                Console.WriteLine("No streams: " + movie.Name);
                             }
                         }
                     }
@@ -81,7 +87,6 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
 
         static int GetResolution(StreamVideoInfo stream)
         {
-            return 480;
             if (stream.Height <= 480)
             {
                 return 480;
@@ -102,11 +107,20 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
             {
                 return 2160;
             }
+            return 0;
         }
 
         static String GetFileName(Movie movie, VideoStream stream)
         {
             String nameWithoutSpaces = movie.Name.Replace(" ", "_");
+
+            string illegal = "\"M\"\\a/ry/ h**ad:>> a\\/:*?\"| li*tt|le|| la\"mb.?";
+            string invalid = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
+
+            foreach (char c in invalid)
+            {
+                nameWithoutSpaces = nameWithoutSpaces.Replace(c.ToString(), "");
+            }
 
             var resoution = GetResolution(stream.Video.First());
 
@@ -131,13 +145,13 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
                 {
                     return streamsWithSelectedAudio.Single();
                 }
-                else if(streamsWithSelectedAudio.Any())
+                else if (streamsWithSelectedAudio.Any())
                 {
                     var maxResolutionItem = streamsWithSelectedAudio.Select(s => s.Video.First()).MaxBy(m => m.Height);
                     return streams.Single(w => w.Video.Contains(maxResolutionItem));
                 }
             }
-            
+
             if (canBeWithSubtitles)
             {
                 var streamsWithSelectedSubtitles = streams.Where(w => w.Subtitles.Any(a => a.Language.ToLower() == language));
@@ -145,7 +159,7 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
                 {
                     return streamsWithSelectedSubtitles.Single();
                 }
-                else if(streamsWithSelectedSubtitles.Any())
+                else if (streamsWithSelectedSubtitles.Any())
                 {
                     var maxResolutionItem = streamsWithSelectedSubtitles.Select(s => s.Video.First()).MaxBy(m => m.Height);
                     return streams.Single(w => w.Video.Contains(maxResolutionItem));
