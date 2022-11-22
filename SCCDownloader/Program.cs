@@ -11,8 +11,7 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
     internal class Program
     {
         static bool enableMediaInfoExtensions = true;
-        WebClient wc = new WebClient();
-
+        static string DownloadFolder = "Downloads";
 
         static void Main(string[] args)
         {
@@ -22,6 +21,11 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
 
         static async Task MainAsync()
         {
+            if(!Directory.Exists(DownloadFolder))
+            {
+                Directory.CreateDirectory(DownloadFolder);
+            }
+
             var sc = new StreamCinema();
             var ws = new WebShare();
 
@@ -55,18 +59,19 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
                                     Console.WriteLine(GetInfoStringFromStream(movie.Name, streamIdent));
                                     var fileName = GetFileName(movie, streamIdent);
 
-                                    if (!File.Exists(fileName))
+                                    if (!File.Exists(DownloadFolder + "/" + fileName))
                                     {
                                         var link = await ws.GetLink(wsToken, streamIdent.Ident);
 
                                         var progress = new ProgressBar();
-                                        await WebUtils.DownloadAsync(link, fileName, progress);
+                                        await WebUtils.DownloadAsync(link, DownloadFolder + "/" + fileName, progress);
                                         if (enableMediaInfoExtensions)
                                         {
-                                            var extension = StartMediaInfoProcess(fileName);
+                                            var extension = StartMediaInfoProcess(DownloadFolder + "/" + fileName);
                                             if (extension != "unk")
                                             {
-                                                File.Move(fileName, fileName.Replace(".unk", "." + extension));
+                                                File.Move(DownloadFolder + "/" + fileName, DownloadFolder + "/" + fileName.Replace(".unk", "." + extension));
+                                                File.Create(DownloadFolder + "/" + fileName);
                                                 fileName = fileName.Replace(".unk", "." + extension);
                                             }
                                         }
