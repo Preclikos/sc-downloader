@@ -1,13 +1,16 @@
 ﻿using SCCDownloader;
 using SCCDownloader.Models;
+using System.Diagnostics;
 using System.Net;
+using System.Text;
+using System.Text.Json;
 using XAct;
 
 namespace SCCDownoader // Note: actual namespace depends on the project name.
 {
     internal class Program
     {
-
+        static bool enableMediaInfoExtensions = true;
         WebClient wc = new WebClient();
 
 
@@ -58,7 +61,15 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
 
                                         var progress = new ProgressBar();
                                         await WebUtils.DownloadAsync(link, fileName, progress);
-
+                                        if (enableMediaInfoExtensions)
+                                        {
+                                            var extension = StartMediaInfoProcess(fileName);
+                                            if (extension != "unk")
+                                            {
+                                                File.Move(fileName, fileName.Replace(".unk", "." + extension));
+                                                fileName = fileName.Replace(".unk", "." + extension);
+                                            }
+                                        }
                                         Console.WriteLine("Completed: " + fileName);
                                     }
                                     else
@@ -184,6 +195,68 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
             string template = "{0} Video:({1}:{2}x{3}) Audio:({4}) Subtitles:({5})";
             return String.Format(template, name, video.Codec, video.Width, video.Height, audioLangs, subtitleLangs);
 
+        }
+
+
+        static string StartMediaInfoProcess(String filePath)
+        {
+            //Setting an instance of ProcessStartInfo class
+            // under System.Diagnostic Assembly Reference
+            ProcessStartInfo StartInfo = new ProcessStartInfo
+            {
+                FileName = "./MediaInfo_CLI_22.09_Windows_x64/MediaInfo.exe",
+                Arguments = "./" + filePath + " --Output=JSON",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                CreateNoWindow = true
+            };
+
+            //Instead of using the above two line of codes, You
+            // can just use the code below:
+            // ProcessStartInfo pro = new ProcessStartInfo("cmd.exe");
+            //Creating an Instance of the Process Class
+            // which will help to execute our Process
+            Process proStart = new Process();
+            //Setting up the Process Name here which we are
+            // going to start from ProcessStartInfo
+            proStart.StartInfo = StartInfo;
+            //Calling the Start Method of Process class to
+            // Invoke our Process viz 'cmd.exe'
+            proStart.Start();
+
+            StringBuilder stringBuilder = new StringBuilder();
+            while (!proStart.StandardOutput.EndOfStream)
+            {
+                string line = proStart.StandardOutput.ReadLine();
+                // do something with line
+                stringBuilder.AppendLine(line);
+            }
+            var result = JsonSerializer.Deserialize<RootModel>(stringBuilder.ToString());
+
+            if (result != null && result.Media != null && result.Media.Track != null && result.Media.Track.Length > 0)
+            {
+                var track = result.Media.Track.FirstOrDefault();
+                if (track != null && track.Extra != null && track.Extra.FileExtensionInvalid != null)
+                {
+                    if (!String.IsNullOrEmpty(track.Extra.FileExtensionInvalid))
+                    {
+                        var splitted = track.Extra.FileExtensionInvalid.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        return splitted.FirstOrDefault() ?? "unk";
+                    }
+                    else
+                    {
+                        return "unk";
+                    }
+                }
+                else
+                {
+                    return "unk";
+                }
+            }
+            else
+            {
+                return "unk";
+            }
         }
     }
 }
