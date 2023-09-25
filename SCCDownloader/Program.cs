@@ -21,7 +21,9 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
 
         static async Task MainAsync()
         {
-            if(!Directory.Exists(DownloadFolder))
+            var episodeStream = new List<EpisodeWithStream>();
+
+            if (!Directory.Exists(DownloadFolder))
             {
                 Directory.CreateDirectory(DownloadFolder);
             }
@@ -29,13 +31,33 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
             var sc = new StreamCinema();
             var ws = new WebShare();
 
-            Console.Write("Zadej pozadovany rok: ");
+            Console.Write("Zadej id serialu: ");
 
-            var yearText = Console.ReadLine();
-            var year = Int32.Parse(yearText);
+            var showId = Console.ReadLine();
 
-            var movies = await sc.GetMovieList(year);
-            if (movies.Any())
+            var seasons = await sc.GetShowSeasons(showId);
+            if (seasons.Any())
+            {
+                Console.WriteLine("Nasel sem " + seasons.Count() + " sezon");
+                Console.Write("Zadej cislo kterou chces: ");
+                var seasonNumber = Console.ReadLine();
+                var selectedSeason = seasons.SingleOrDefault(s => s.Number == int.Parse(seasonNumber));
+                if (selectedSeason != null)
+                {
+                    var episodes = await sc.GetSeasonEpisodes(selectedSeason.Id);
+                    foreach (var episode in episodes)
+                    {
+                        var streams = await sc.GetStreams(episode.Id);
+                        episodeStream.Add(new EpisodeWithStream(episode.Number, episode.Id, episode.Name, streams));
+                    }
+                }
+            }
+
+
+
+
+
+            /*if (movies.Any())
             {
 
                 Console.Write("Zadej jmeno: ");
@@ -95,7 +117,7 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
                     }
                 }
 
-            }
+            }*/
 
             Console.WriteLine("Alles dones to je dat coooo!!!!!");
             Console.ReadLine();

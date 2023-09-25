@@ -11,7 +11,7 @@ namespace SCCDownloader
         static readonly String BaseUrl = "https://plugin.sc2.zone";
         static String YearUrl = "/api/media/filter/v2/year?value={0}&order=desc&sort=year&type=movie&size=" + Limit + "&access_token=th2tdy0no8v1zoh1fs59";
         static String YearFromUrl = "/api/media/filter/v2/year?value={0}&order=desc&sort=year&type=movie&size=" + Limit + "&access_token=th2tdy0no8v1zoh1fs59&from={1}";
-        
+        static String ParentUrl = "/api/media/filter/v2/parent?value={0}&sort=episode&access_token=th2tdy0no8v1zoh1fs59";
         //static String SearchUrl = "/api/media/filter/v2/search?access_token=th2tdy0no8v1zoh1fs59&order=desc&sort=score&type=movie";
         static String StreamUrl = "/api/media/{0}/streams?access_token=th2tdy0no8v1zoh1fs59";
 
@@ -19,6 +19,54 @@ namespace SCCDownloader
         {
             httpClient = new HttpClient();
             httpClient.BaseAddress = new Uri(BaseUrl);
+        }
+
+        public async Task<IEnumerable<Season>> GetShowSeasons(string showId)
+        {
+            var pathFilter = String.Format(ParentUrl, showId);
+            var response = await httpClient.GetAsync(pathFilter);
+            SearchResponse result = await response.Content.ReadFromJsonAsync<SearchResponse>();
+
+            var seasonList = new List<Season>();
+
+            foreach(var season in result.Hits.Hits)
+            {
+                var seasonSeason = new Season()
+                {
+                    Id = season.Id,
+                    Number = (int)season.Source.InfoLabel.Season,
+                    Name = season.Source.InfoLabel.OriginalTitle
+                };
+                seasonList.Add(seasonSeason);
+            }
+
+            Console.WriteLine("Info received for: " + seasonList.Count);
+
+            return seasonList;
+        }
+
+        public async Task<IEnumerable<Episode>> GetSeasonEpisodes(string seasonId)
+        {
+            var pathFilter = String.Format(ParentUrl, seasonId);
+            var response = await httpClient.GetAsync(pathFilter);
+            SearchResponse result = await response.Content.ReadFromJsonAsync<SearchResponse>();
+
+            var episodeList = new List<Episode>();
+
+            foreach (var episode in result.Hits.Hits)
+            {
+                var episodeEpisode = new Episode()
+                {
+                    Id = episode.Id,
+                    Number = (int)episode.Source.InfoLabel.Episode,
+                    Name = episode.Source.InfoLabel.OriginalTitle
+                };
+                episodeList.Add(episodeEpisode);
+            }
+
+            Console.WriteLine("Info received for: " + episodeList.Count);
+
+            return episodeList;
         }
 
         public async Task<IEnumerable<Movie>> GetMovieList(int year)
@@ -68,12 +116,12 @@ namespace SCCDownloader
             return movieList;
         }
 
-        public async Task<VideoStream[]> GetStreams(string id)
+        public async Task<Models.Stream[]> GetStreams(string id)
         {
             var pathStream = String.Format(StreamUrl, id);
             var response = await httpClient.GetAsync(pathStream);
             //var sda = response.Content.ReadAsStringAsync();
-            return await response.Content.ReadFromJsonAsync<VideoStream[]>();
+            return await response.Content.ReadFromJsonAsync<Stream[]>();
         }
     }
 }

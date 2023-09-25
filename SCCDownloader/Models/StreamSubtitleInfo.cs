@@ -12,5 +12,8 @@ namespace SCCDownloader.Models
 
         [JsonPropertyName("forced")]
         public Boolean Forced { get; set; }
+
+        [JsonPropertyName("src")]
+        public String Src { get; set; }
     }
 }

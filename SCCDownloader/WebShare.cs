@@ -1,6 +1,8 @@
 ﻿using SCCDownloader.WSModels;
 using System.Text;
 using System.Xml.Serialization;
+using XAct;
+using XAct.Users;
 using SHA1Managed = System.Security.Cryptography.SHA1Managed;
 
 namespace SCCDownloader
@@ -16,22 +18,34 @@ namespace SCCDownloader
             httpClient.BaseAddress = new Uri(BaseUrl);
         }
 
-        public async Task<String> GetLink(string token, string ident)
+        public async Task<String> GetLink(string token, string ident, string password)
         {
-            var parameters = new Dictionary<string, string> { { "ident", ident }, { "wst", token }, { "download_type", "file_download" } };
+            var saltParameters = new Dictionary<string, string> { { "wst", token }, { "ident", ident } };
+            var saltEncodedContent = new FormUrlEncodedContent(saltParameters);
+            var saltResponse = await httpClient.PostAsync("/api/file_password_salt/", saltEncodedContent);
+
+            XmlSerializer saltSerializer = new XmlSerializer(typeof(SaltResponse));
+            var saltResult = (SaltResponse)saltSerializer.Deserialize(saltResponse.Content.ReadAsStream());
+
+            if (saltResult.Status != "OK")
+            {
+                throw new Exception("Salt error");
+            }          
+
+            var parameters = new Dictionary<string, string> { { "ident", ident }, { "wst", token }, { "password", HashPassword(password, saltResult.Salt) }, { "download_type", "file_download" } };
             var encodedContent = new FormUrlEncodedContent(parameters);
             var response = await httpClient.PostAsync("/api/file_link/", encodedContent);
 
 
             XmlSerializer serializer = new XmlSerializer(typeof(LinkResponse));
-            var saltResult = (LinkResponse)serializer.Deserialize(response.Content.ReadAsStream());
+            var fileResult = (LinkResponse)serializer.Deserialize(response.Content.ReadAsStream());
 
-            if (saltResult.Status != "OK")
+            if (fileResult.Status != "OK")
             {
                 throw new Exception("Link error");
             }
 
-            return saltResult.Link;
+            return fileResult.Link;
         }
 
         public async Task<String> GetToken(string userName, string password)
