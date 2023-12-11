@@ -10,15 +10,22 @@ namespace SCCDownloader
         public static Task DownloadAsync(string requestUri, string filename, IProgress<KeyValuePair<long, long>> progress)
         {
             if (requestUri == null)
-                throw new ArgumentNullException("requestUri");
+            {
+                //throw new ArgumentNullException("requestUri");
+                 Console.WriteLine("Download URI empty, unable to download");
+                return Task.CompletedTask;
+            }
 
-            return DownloadAsync(new Uri(requestUri), filename, progress);
+            else
+            {
+                return DownloadAsync(new Uri(requestUri), filename, progress);
+            }
         }
 
         public static async Task DownloadAsync(Uri requestUri, string filename, IProgress<KeyValuePair<long, long>> progress)
         {
             if (filename == null)
-                throw new ArgumentNullException("filename");
+                throw new ArgumentNullException("Empty filename");
 
 
             using (var httpClient = new HttpClient())
