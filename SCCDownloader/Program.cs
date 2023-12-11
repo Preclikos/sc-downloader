@@ -11,7 +11,7 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
     internal class Program
     {
         static bool enableMediaInfoExtensions = true;
-        static string DownloadFolder = "Downloads";
+        //static string DownloadFolder = "Downloads";
 
         static void Main(string[] args)
         {
@@ -21,7 +21,15 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
 
         static async Task MainAsync()
         {
-            if(!Directory.Exists(DownloadFolder))
+            Console.Write("Zadej pozadovany rok: ");
+
+            var yearText = Console.ReadLine();
+            var year = Int32.Parse(yearText);
+
+            var DownloadFolder = yearText;
+
+
+            if (!Directory.Exists(DownloadFolder))
             {
                 Directory.CreateDirectory(DownloadFolder);
             }
@@ -29,10 +37,7 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
             var sc = new StreamCinema();
             var ws = new WebShare();
 
-            Console.Write("Zadej pozadovany rok: ");
-
-            var yearText = Console.ReadLine();
-            var year = Int32.Parse(yearText);
+            
 
             var movies = await sc.GetMovieList(year);
             if (movies.Any())
@@ -128,9 +133,14 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
 
         static String GetFileName(Movie movie, VideoStream stream)
         {
+            // replace empty names with tmdb and fallback to movieID 
+            if (movie.Name.Length == 0) { movie.Name = movie.Id; };
+            
             String nameWithoutSpaces = movie.Name.Replace(" ", "_");
 
-            string illegal = "\"M\"\\a/ry/ h**ad:>> a\\/:*?\"| li*tt|le|| la\"mb.?";
+
+            //string illegal = "\"M\"\\a/ry/ h**ad:>> a\\/:*?\"| li*tt|le|| la\"mb.?"; //asi pokus z testování illegal stringu? 
+
             string invalid = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
 
             foreach (char c in invalid)
