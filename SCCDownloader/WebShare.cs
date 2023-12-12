@@ -28,7 +28,8 @@ namespace SCCDownloader
 
             if (saltResult.Status != "OK")
             {
-                throw new Exception("Link error");
+                // throw new Exception("Link error");
+                Console.WriteLine("Link error");
             }
 
             return saltResult.Link;

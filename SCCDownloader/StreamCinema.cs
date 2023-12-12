@@ -1,5 +1,6 @@
 ﻿using SCCDownloader.Models;
 using System.Net.Http.Json;
+using XAct.Resources;
 
 namespace SCCDownloader
 {
@@ -60,7 +61,10 @@ namespace SCCDownloader
                     new Movie
                     {
                         Id = movie.Id,
-                        Name = movie.Source.InfoLabel.OriginalTitle
+                        Name = movie.Source.InfoLabel.OriginalTitle,
+                        CSFD = movie.Source.InfoLabel.csfd,
+                        IMDB = movie.Source.InfoLabel.imdb,
+                        TMDB = movie.Source.InfoLabel.tmdb
                     }
                     );
             }
