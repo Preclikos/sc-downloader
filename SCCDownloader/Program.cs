@@ -11,7 +11,8 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
     internal class Program
     {
         static bool enableMediaInfoExtensions = true;
-        //static string DownloadFolder = "Downloads";
+
+        //static string DownloadFolder = "Downloads"; //replaced by making folders by year 
 
         static void Main(string[] args)
         {

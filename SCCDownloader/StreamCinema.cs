@@ -10,11 +10,11 @@ namespace SCCDownloader
 
         static protected HttpClient httpClient;
         static readonly String BaseUrl = "https://plugin.sc2.zone";
-        static String YearUrl = "/api/media/filter/v2/year?value={0}&order=desc&sort=year&type=movie&size=" + Limit + "&access_token=th2tdy0no8v1zoh1fs59";
-        static String YearFromUrl = "/api/media/filter/v2/year?value={0}&order=desc&sort=year&type=movie&size=" + Limit + "&access_token=th2tdy0no8v1zoh1fs59&from={1}";
+        static String YearUrl = "/api/media/filter/v2/year?value={0}&order=desc&sort=year&type=movie&size=" + Limit + "&access_token=F4fdEDXKgsw7z3TxzSjaDpp3O";
+        static String YearFromUrl = "/api/media/filter/v2/year?value={0}&order=desc&sort=year&type=movie&size=" + Limit + "&access_token=F4fdEDXKgsw7z3TxzSjaDpp3O&from={1}";
         
         //static String SearchUrl = "/api/media/filter/v2/search?access_token=th2tdy0no8v1zoh1fs59&order=desc&sort=score&type=movie";
-        static String StreamUrl = "/api/media/{0}/streams?access_token=th2tdy0no8v1zoh1fs59";
+        static String StreamUrl = "/api/media/{0}/streams?access_token=F4fdEDXKgsw7z3TxzSjaDpp3O";
 
         public StreamCinema()
         {
