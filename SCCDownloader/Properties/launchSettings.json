@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SCCDownloader": {
+      "commandName": "Project",
+      "commandLineArgs": "--year 1923"
+    }
+  }
+}

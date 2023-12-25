@@ -1,4 +1,6 @@
-﻿using SCCDownloader;
+﻿using Microsoft.Extensions.Configuration;
+// using Microsoft.VisualBasic; //not used
+using SCCDownloader;
 using SCCDownloader.Models;
 using System.Diagnostics;
 //using System.Net; //not used
@@ -16,20 +18,43 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
 
         static void Main(string[] args)
         {
-            MainAsync().Wait();
+            
+
+
+            MainAsync(args).Wait(); //runs MainAsync()
 
         }
 
-        static async Task MainAsync()
+
+        static async Task MainAsync(string[] args)
         {
-            Console.Write("Zadej pozadovany rok: ");
 
-            var yearText = Console.ReadLine();
+            // create "Config" variable containing command line arguments
+            
+            var Configuration = new ConfigurationBuilder();
+            Configuration.AddCommandLine(args);
+            var Config = Configuration.Build();
+
+            
+
+
+            // create "year" from console parameter, read direct input if console input is null
+            var yearText = Config["year"];
+
+            if (yearText == null)
+            {
+                Console.Write("Zadej pozadovany rok: ");
+                yearText = Console.ReadLine();
+            }
+
+            // create number from yearText
             var year = Int32.Parse(yearText);
- //test
-            // var genre = String.Format("Western"); //used for search testing
- //konec testu
 
+
+            //test
+            // var genre = String.Format("Western"); //used for search testing
+            //konec testu
+            
             var DownloadFolder = yearText;
 
 
