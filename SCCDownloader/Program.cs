@@ -1,7 +1,7 @@
 ﻿using SCCDownloader;
 using SCCDownloader.Models;
 using System.Diagnostics;
-using System.Net;
+//using System.Net; //not used
 using System.Text;
 using System.Text.Json;
 using XAct;
@@ -26,6 +26,9 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
 
             var yearText = Console.ReadLine();
             var year = Int32.Parse(yearText);
+ //test
+            // var genre = String.Format("Western"); //used for search testing
+ //konec testu
 
             var DownloadFolder = yearText;
 
@@ -165,7 +168,7 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
         static VideoStream GetIdentForParameters(VideoStream[] streams, String language = "cs", Boolean canBeWithSubtitles = true, Boolean canBeFilterSkiped = false)
         {
 
-            var streamsWithSelectedAudio = streams.Where(w => w.Audio.Any(a => a.Language.ToLower() == language));
+            var streamsWithSelectedAudio = streams.Where(w => w.Audio.Any(a => (a.Language != null) && (a.Language.ToLower() == language))) ; // null returned sometimes and was throwing exception
             if (streamsWithSelectedAudio.Any())
             {
                 if (streamsWithSelectedAudio.Count() == 1)
@@ -220,7 +223,7 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
             // under System.Diagnostic Assembly Reference
             ProcessStartInfo StartInfo = new ProcessStartInfo
             {
-                FileName = "./MediaInfo_CLI_22.09_Windows_x64/MediaInfo.exe",
+                FileName = "./MediaInfo_CLI_23.11.1_Windows_x64/MediaInfo.exe",
                 Arguments = "./" + filePath + " --Output=JSON",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
