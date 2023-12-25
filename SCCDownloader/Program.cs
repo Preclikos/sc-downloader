@@ -50,11 +50,29 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
             // create number from yearText
             var year = Int32.Parse(yearText);
 
+            // username from command line 
+            var userName = Config["username"];
+
+            if (userName == null)
+            {
+                Console.Write("Zadej uzivatelske jmeno: ");
+                userName = Console.ReadLine();
+            }
+
+
+            // password from command line 
+            var password = Config["password"];
+
+            if (password == null)
+            {
+                Console.Write("Zadej heslo: ");
+                password = Console.ReadLine();
+            }
 
             //test
             // var genre = String.Format("Western"); //used for search testing
             //konec testu
-            
+
             var DownloadFolder = yearText;
 
 
@@ -71,11 +89,12 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
             var movies = await sc.GetMovieList(year);
             if (movies.Any())
             {
-
+                /*
                 Console.Write("Zadej jmeno: ");
                 var userName = Console.ReadLine();
                 Console.Write("Zadej heslo: ");
                 var password = Console.ReadLine();
+                */  //passed from command line, not needed anymore
 
                 if (!String.IsNullOrEmpty(userName) || !String.IsNullOrEmpty(password))
                 {
