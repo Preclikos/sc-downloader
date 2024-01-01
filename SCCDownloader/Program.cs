@@ -1,7 +1,9 @@
-﻿using SCCDownloader;
+﻿using Microsoft.Extensions.Configuration;
+// using Microsoft.VisualBasic; //not used
+using SCCDownloader;
 using SCCDownloader.Models;
 using System.Diagnostics;
-using System.Net;
+//using System.Net; //not used
 using System.Text;
 using System.Text.Json;
 using XAct;
@@ -11,20 +13,65 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
     internal class Program
     {
         static bool enableMediaInfoExtensions = true;
-        //static string DownloadFolder = "Downloads";
+
+        //static string DownloadFolder = "Downloads"; //replaced by making folders by year 
 
         static void Main(string[] args)
         {
-            MainAsync().Wait();
+            
+
+
+            MainAsync(args).Wait(); //runs MainAsync()
 
         }
 
-        static async Task MainAsync()
-        {
-            Console.Write("Zadej pozadovany rok: ");
 
-            var yearText = Console.ReadLine();
+        static async Task MainAsync(string[] args)
+        {
+
+            // create "Config" variable containing command line arguments
+            
+            var Configuration = new ConfigurationBuilder();
+            Configuration.AddCommandLine(args);
+            var Config = Configuration.Build();
+
+            
+
+
+            // create "year" from console parameter, read direct input if console input is null
+            var yearText = Config["year"];
+
+            if (yearText == null)
+            {
+                Console.Write("Zadej pozadovany rok: ");
+                yearText = Console.ReadLine();
+            }
+
+            // create number from yearText
             var year = Int32.Parse(yearText);
+
+            // username from command line 
+            var userName = Config["username"];
+
+            if (userName == null)
+            {
+                Console.Write("Zadej uzivatelske jmeno: ");
+                userName = Console.ReadLine();
+            }
+
+
+            // password from command line 
+            var password = Config["password"];
+
+            if (password == null)
+            {
+                Console.Write("Zadej heslo: ");
+                password = Console.ReadLine();
+            }
+
+            //test
+            // var genre = String.Format("Western"); //used for search testing
+            //konec testu
 
             var DownloadFolder = yearText;
 
@@ -42,11 +89,12 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
             var movies = await sc.GetMovieList(year);
             if (movies.Any())
             {
-
+                /*
                 Console.Write("Zadej jmeno: ");
                 var userName = Console.ReadLine();
                 Console.Write("Zadej heslo: ");
                 var password = Console.ReadLine();
+                */  //passed from command line, not needed anymore
 
                 if (!String.IsNullOrEmpty(userName) || !String.IsNullOrEmpty(password))
                 {
@@ -164,7 +212,7 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
         static VideoStream GetIdentForParameters(VideoStream[] streams, String language = "cs", Boolean canBeWithSubtitles = true, Boolean canBeFilterSkiped = false)
         {
 
-            var streamsWithSelectedAudio = streams.Where(w => w.Audio.Any(a => a.Language.ToLower() == language));
+            var streamsWithSelectedAudio = streams.Where(w => w.Audio.Any(a => (a.Language != null) && (a.Language.ToLower() == language))) ; // null returned sometimes and was throwing exception
             if (streamsWithSelectedAudio.Any())
             {
                 if (streamsWithSelectedAudio.Count() == 1)
@@ -219,7 +267,7 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
             // under System.Diagnostic Assembly Reference
             ProcessStartInfo StartInfo = new ProcessStartInfo
             {
-                FileName = "./MediaInfo_CLI_22.09_Windows_x64/MediaInfo.exe",
+                FileName = "./MediaInfo_CLI_23.11.1_Windows_x64/MediaInfo.exe",
                 Arguments = "./" + filePath + " --Output=JSON",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,

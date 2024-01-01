@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SCCDownloader": {
+      "commandName": "Project",
+      "commandLineArgs": "--year 1923 --username nocturne.op.15 --password OpsRPMPVF3Q4PDQd9nH0"
+    }
+  }
+}
