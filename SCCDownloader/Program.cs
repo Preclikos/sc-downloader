@@ -44,7 +44,7 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
 
                        var sc = new StreamCinema();
                        var ws = new WebShare();
-                       var mytoken = await ws.GetToken("Sparh4wk", "abc12345");
+                       var mytoken = await ws.GetToken("", "");
 
                        var seasons = await sc.GetShowSeasons(o.showId);
                        if (seasons.Any())
