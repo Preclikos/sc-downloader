@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SCCDownloader": {
+      "commandName": "Project",
+      "commandLineArgs": "-s 6392debf7f10539e95264f69 -n 1 -r 1920 -l cs"
+    }
+  }
+}

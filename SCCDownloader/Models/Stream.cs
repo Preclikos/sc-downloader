@@ -26,5 +26,6 @@ namespace SCCDownloader.Models
 
         [JsonPropertyName("subtitles")]
         public StreamSubtitleInfo[] Subtitles { get; set; }
+
     }
 }

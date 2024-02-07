@@ -15,5 +15,8 @@ namespace SCCDownloader.Models
 
         [JsonPropertyName("codec")]
         public String Codec { get; set; }
+        
+        [JsonPropertyName("hdr")]
+        public String Hdr { get; set; }
     }
 }

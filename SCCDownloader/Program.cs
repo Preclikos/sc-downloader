@@ -1,126 +1,152 @@
-﻿using SCCDownloader;
+﻿using CommandLine;
+using SCCDownloader;
 using SCCDownloader.Models;
 using System.Diagnostics;
+using System.IO;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using XAct;
 
 namespace SCCDownoader // Note: actual namespace depends on the project name.
 {
+    public class Options
+    {
+        [Option('s', "showId", Required = true, HelpText = "ShowID from SCC.")]
+        public string showId { get; set; }
+
+        [Option('n', "seasonNumber", Required = true, HelpText = "seasonNumber os show.")]
+        public int seasonNumber { get; set; }
+
+        [Option('r', "resolution", Required = true, HelpText = "width of video.")]
+        public int videoWidth { get; set; }
+
+        [Option('l', "language", Required = true, HelpText = "language of audio.")]
+        public string audioLanguage { get; set; }
+    }
     internal class Program
     {
         static bool enableMediaInfoExtensions = true;
-        static string DownloadFolder = "Downloads";
+        static string DownloadFolder = "Downloads";com
 
-        static void Main(string[] args)
+        static async Task<int> Main(string[] args)
         {
-            MainAsync().Wait();
+            await Parser.Default.ParseArguments<Options>(args)
+                   .WithParsedAsync<Options>(async o =>
+                   {
+                       var episodeStream = new List<EpisodeWithStream>();
+
+                       if (!Directory.Exists(DownloadFolder))
+                       {
+                           Directory.CreateDirectory(DownloadFolder);
+                       }
+
+                       var sc = new StreamCinema();
+                       var ws = new WebShare();
+                       var mytoken = await ws.GetToken("", "");
+
+                       var seasons = await sc.GetShowSeasons(o.showId);
+                       if (seasons.Any())
+                       {
+                           
+                           var selectedSeason = seasons.SingleOrDefault(s => s.Number == o.seasonNumber);
+                           if (selectedSeason != null)
+                           {
+                               var episodes = await sc.GetSeasonEpisodes(selectedSeason.Id);
+                               foreach (var episode in episodes)
+                               {
+                                   var streams = await sc.GetStreams(episode.Id);
+                                   episodeStream.Add(new EpisodeWithStream(episode.Number, episode.Id, episode.Name, streams));
+                               }
+                           }
+
+                           var singleEpisodes = GetEpisodeList(episodeStream);
+
+                           var rightEpisodes = singleEpisodes.Where(s => s.AudioLanguages.Contains(o.audioLanguage) && s.VideoWidth == o.videoWidth);
+                           var groupEpisodes = rightEpisodes.GroupBy(s => s.EpisodeId);
+                           foreach (var groupEpisode in groupEpisodes)
+                           {
+                               var selEpisode = groupEpisode.OrderByDescending(s => s.Size).First();
+                               var pwdName = selEpisode.StreamName + selEpisode.Ident;
+                               var shHash = ComputeSha256Hash(pwdName);
+                               var directUrl = await ws.GetLink(mytoken, selEpisode.Ident, shHash);
+                               string episodeNumber = selEpisode.Number.ToString();
+                               Console.WriteLine(episodeNumber + " - " + directUrl);
+                           }
+                       }
+                   });
+            return 0;
 
         }
 
-        static async Task MainAsync()
+        static IEnumerable<VideoStream> GetEpisodesStream(IEnumerable<EpisodeWithStream> episodes)
         {
-            var episodeStream = new List<EpisodeWithStream>();
+            return episodes.SelectMany(e => e.Streams);
+        }
 
-            if (!Directory.Exists(DownloadFolder))
+        static IEnumerable<string> Resolutionselector(IEnumerable<EpisodeWithStream> episodes)
+        {
+            var resolutions = GetEpisodesStream(episodes).SelectMany(v => v.Video).Select(w => w.Width).Distinct();
+            return resolutions.Select(i => i.ToString());
+        }
+
+        static IEnumerable<string> Audioselector(IEnumerable<EpisodeWithStream> episodes)
+        {
+            var audios = GetEpisodesStream(episodes).SelectMany(v => v.Audio).Select(w => w.Language).Distinct();
+            return audios.Select(i => i.ToString());
+        }
+
+        static IEnumerable<SingleEpisode> GetEpisodeList(IEnumerable<EpisodeWithStream> episodes)
+        {
+            var singleEpisodes = new List<SingleEpisode>();
+            foreach (var episode in episodes)
             {
-                Directory.CreateDirectory(DownloadFolder);
-            }
-
-            var sc = new StreamCinema();
-            var ws = new WebShare();
-
-            Console.Write("Zadej id serialu: ");
-
-            var showId = Console.ReadLine();
-
-            var seasons = await sc.GetShowSeasons(showId);
-            if (seasons.Any())
-            {
-                Console.WriteLine("Nasel sem " + seasons.Count() + " sezon");
-                Console.Write("Zadej cislo kterou chces: ");
-                var seasonNumber = Console.ReadLine();
-                var selectedSeason = seasons.SingleOrDefault(s => s.Number == int.Parse(seasonNumber));
-                if (selectedSeason != null)
+                foreach (var stream in episode.Streams)
                 {
-                    var episodes = await sc.GetSeasonEpisodes(selectedSeason.Id);
-                    foreach (var episode in episodes)
-                    {
-                        var streams = await sc.GetStreams(episode.Id);
-                        episodeStream.Add(new EpisodeWithStream(episode.Number, episode.Id, episode.Name, streams));
-                    }
+                    var singleEpisode = new SingleEpisode();
+
+                    singleEpisode.Number = episode.Number;
+                    singleEpisode.EpisodeId = episode.Id;
+                    singleEpisode.EpisodeName = episode.Name;
+
+                    singleEpisode.StreamId = stream.Id;
+                    singleEpisode.StreamName = stream.Name;
+                    singleEpisode.Ident = stream.Ident;
+
+                    var videoStream = stream.Video.Single();
+                    singleEpisode.VideoWidth = videoStream.Width;
+                    singleEpisode.VideoHeight = videoStream.Height;
+                    singleEpisode.VideoHdr = videoStream.Hdr;
+
+
+                    singleEpisode.AudioLanguages = string.Join(',', stream.Audio.Select(x => x.Language));
+                    singleEpisode.SubtitlesLanguages = string.Join(',', stream.Subtitles.Select(x => x.Language));
+
+
+                    singleEpisodes.Add(singleEpisode);
                 }
             }
+            return singleEpisodes;
+        }
 
 
-
-
-
-            /*if (movies.Any())
+        static string ComputeSha256Hash(string rawData)
+        {
+            // Create a SHA256
+            using (SHA256 sha256Hash = SHA256.Create())
             {
+                // ComputeHash - returns byte array
+                byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(rawData));
 
-                Console.Write("Zadej jmeno: ");
-                var userName = Console.ReadLine();
-                Console.Write("Zadej heslo: ");
-                var password = Console.ReadLine();
-
-                if (!String.IsNullOrEmpty(userName) || !String.IsNullOrEmpty(password))
+                // Convert byte array to a string
+                StringBuilder builder = new StringBuilder();
+                for (int i = 0; i < bytes.Length; i++)
                 {
-                    var wsToken = await ws.GetToken(userName, password);
-                    if (!String.IsNullOrEmpty(wsToken))
-                    {
-                        foreach (var movie in movies)
-                        {
-                            var streams = await sc.GetStreams(movie.Id);
-                            if (streams.Length > 0)
-                            {
-                                var streamIdent = GetIdentForParameters(streams);
-                                if (streamIdent != null && !String.IsNullOrEmpty(movie.Name))
-                                {
-                                    Console.WriteLine(GetInfoStringFromStream(movie.Name, streamIdent));
-                                    var fileName = GetFileName(movie, streamIdent);
-
-                                    if (!File.Exists(DownloadFolder + "/" + fileName))
-                                    {
-                                        var link = await ws.GetLink(wsToken, streamIdent.Ident);
-
-                                        var progress = new ProgressBar();
-                                        await WebUtils.DownloadAsync(link, DownloadFolder + "/" + fileName, progress);
-                                        if (enableMediaInfoExtensions)
-                                        {
-                                            var extension = StartMediaInfoProcess(DownloadFolder + "/" + fileName);
-                                            if (extension != "unk")
-                                            {
-                                                File.Move(DownloadFolder + "/" + fileName, DownloadFolder + "/" + fileName.Replace(".unk", "." + extension));
-                                                File.Create(DownloadFolder + "/" + fileName);
-                                                fileName = fileName.Replace(".unk", "." + extension);
-                                            }
-                                        }
-                                        Console.WriteLine("Completed: " + fileName);
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine("File exist skipping: " + fileName);
-                                    }
-                                }
-                                else
-                                {
-                                    Console.WriteLine("No audio or subtitles exist skip: " + movie.Name);
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("No streams: " + movie.Name);
-                            }
-                        }
-                    }
+                    builder.Append(bytes[i].ToString("x2"));
                 }
-
-            }*/
-
-            Console.WriteLine("Alles dones to je dat coooo!!!!!");
-            Console.ReadLine();
+                return builder.ToString();
+            }
         }
 
         static int GetResolution(StreamVideoInfo stream)

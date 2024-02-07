@@ -10,5 +10,11 @@ namespace SCCDownloader.WSModels
 
         [XmlElement("salt")]
         public string Salt { get; set; }
+
+        [XmlElement("message")]
+        public string Message { get; set; }
+
+        [XmlElement("code")]
+        public string Code { get; set; }
     }
 }
