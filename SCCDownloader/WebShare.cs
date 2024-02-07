@@ -27,12 +27,16 @@ namespace SCCDownloader
             XmlSerializer saltSerializer = new XmlSerializer(typeof(SaltResponse));
             var saltResult = (SaltResponse)saltSerializer.Deserialize(saltResponse.Content.ReadAsStream());
 
-            if (saltResult.Status != "OK")
+            if (saltResult.Status != "OK" && saltResult.Code != "FILE_PASSWORD_SALT_FATAL_2")
             {
                 throw new Exception("Salt error");
             }          
 
-            var parameters = new Dictionary<string, string> { { "ident", ident }, { "wst", token }, { "password", HashPassword(password, saltResult.Salt) }, { "download_type", "file_download" } };
+            var parameters = new Dictionary<string, string> { { "ident", ident }, { "wst", token }, { "download_type", "file_download" } };
+            if (saltResult.Status == "OK")
+            {
+                parameters.Add("password", HashPassword(password, saltResult.Salt));
+            }
             var encodedContent = new FormUrlEncodedContent(parameters);
             var response = await httpClient.PostAsync("/api/file_link/", encodedContent);
 
@@ -61,6 +65,24 @@ namespace SCCDownloader
             var parameters = new Dictionary<string, string> { { "username_or_email", userName } };
             var encodedContent = new FormUrlEncodedContent(parameters);
             var response = await httpClient.PostAsync("/api/salt/", encodedContent);
+
+
+            XmlSerializer serializer = new XmlSerializer(typeof(SaltResponse));
+            var saltResult = (SaltResponse)serializer.Deserialize(response.Content.ReadAsStream());
+
+            if (saltResult.Status != "OK")
+            {
+                throw new Exception("Salt error");
+            }
+
+            return saltResult.Salt;
+        }
+
+        public async Task<String> GetFileSalt(string ident, string token)
+        {
+            var parameters = new Dictionary<string, string> { { "wst", token }, { "ident", ident } };
+            var encodedContent = new FormUrlEncodedContent(parameters);
+            var response = await httpClient.PostAsync("/api/file_password_salt/", encodedContent);
 
 
             XmlSerializer serializer = new XmlSerializer(typeof(SaltResponse));
