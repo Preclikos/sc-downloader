@@ -24,6 +24,12 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
 
         [Option('l', "language", Required = true, HelpText = "language of audio.")]
         public string audioLanguage { get; set; }
+
+        [Option('u', "username", Required = true, HelpText = "webshare username.")]
+        public string audioLanguage { get; set; }
+
+        [Option('p', "password", Required = true, HelpText = "webshare password.")]
+        public string audioLanguage { get; set; }
     }
     internal class Program
     {
@@ -44,7 +50,7 @@ namespace SCCDownoader // Note: actual namespace depends on the project name.
 
                        var sc = new StreamCinema();
                        var ws = new WebShare();
-                       var mytoken = await ws.GetToken("", "");
+                       var mytoken = await ws.GetToken(o.username, o.password);
 
                        var seasons = await sc.GetShowSeasons(o.showId);
                        if (seasons.Any())
